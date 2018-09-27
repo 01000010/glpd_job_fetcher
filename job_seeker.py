@@ -7,6 +7,8 @@ import time
 from selenium.webdriver import Chrome 
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as ExpectedConditions
 
 ###############################################################################
 ### Classes ###################################################################
@@ -41,7 +43,7 @@ class msg: # Console message
         if(underline):
             _str += cc.UNDERLINE
         _str += string + cc.ENDC
-        print(_str)
+        print(_str) if nl == True else print(_str, end = " ")
 
     @staticmethod
     def okb(string, nl = True, bold = False, underline = False):
@@ -94,6 +96,18 @@ def wait_page_load(web_driver, elem_id):
     )
     return result
 
+def refresh_list(web_driver, elem_id):
+    msg.norm("Refreshing list...")
+    result = WebDriverWait(web_driver, 30).until(
+        ExpectedConditions.presence_of_element_located((By.ID, elem_id))
+    )
+    btn_refresh = web_driver.find_element_by_id(elem_id)
+    hover = ActionChains(web_driver)
+    hover.move_to_element(btn_refresh)
+    hover.click(btn_refresh)
+    hover.perform()
+    return result
+
 def save_page_html(web_driver, file_name, dir_path = "page/"):
     full_name = dir_path + file_name
     os.makedirs(os.path.dirname(full_name), exist_ok=True)
@@ -141,26 +155,23 @@ box_psw = driver.find_element_by_id("Password")
 box_psw.send_keys(psw)
 box_psw.send_keys('\ue007')
 msg.okb("Logged-in!!!")
-# wait for the web page to load by targetting an id
-table_view = "tableview-1044"
-wait_page_load(driver, table_view)
-save_page_html(driver, "page_code_wo_jobs.html")
+# table_view = "tableview-1044"
+# wait_page_load(driver, table_view)
+# save_page_html(driver, "page_code_wo_jobs.html")
 
-# main loop for the job hunt
 while(True): # while no job is confirmed
     while(True): # while no job found on the list
-        msg.norm("Refreshing page...")
-        driver.refresh()
-        wait_page_load(driver, table_view)
-        # get table of available jobs
+        refresh_list(driver, "button-1059")
         msg.norm("Looking for jobs...")
         table_jobs = driver.find_elements_by_xpath(
-            '//*[@class="x-grid-item-container"]')
+            '//*[@class="x-grid-item-container"]') # this should be something else
         num_jobs = len(table_jobs)
         msg.norm(str.format("{0} jobs found.", num_jobs))
         if(num_jobs > 0):
-            msg.okb("Jobs found! Saving html for analysis...")
-            save_page_html(driver, "page_code_w_jobs.html")
+            # msg.okb("Jobs found! Saving html for analysis...")
+            # save_page_html(driver, "page_code_w_jobs.html")
             break
     msg.ok("Fetching the first job of the list...", bold=True)
     # TODO
+    break
+msg.header("Script run succesfully!", bold=True)
